@@ -7,11 +7,13 @@ TagManager:
   - Enemy
   - Bullet
   - Wall
+  - SpearReset
+  - EnemyBullet
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Game
   - Water
   - UI
   - 
@@ -41,6 +43,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 2456061139
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0

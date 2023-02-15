@@ -7,69 +7,116 @@ using UnityEngine;
 public class EnemyScript : MonoBehaviour
 {
 
-    public enum enemyStates { WalkingL = 0, WalkingR = 1 };
-
     [Header("Movement")]
-    public enemyStates state;
     public float flyingTime;
-    public float speed;
-
-    private CharacterController controller;
     private float timeFlown = 0f;
+    private float dirX;
+    public float moveSpeed;
+    private Rigidbody2D rb;
+    private bool facingRight = false;
+    private Vector3 localScale;
+    public GameObject Enemy;
+    public bool movingLeft = true;
 
     [Header("Shooting")]
 
     public float shootCooldown;
     public GameObject bullet;
-    public float cooldownTimePassed;
+    public float cooldownTimePassed = 3f;
     public Transform firepoint;
 
+    [Header("Active/Not")]
+    private float timePassed = 0f;
+    public bool currentlyActive = true;
+    public float respawnTime = 0f;
+    public float originalHeight;
+    public AudioSource explode;
 
-    // Start is called before the first frame update
+
+
+    
+
     void Start()
     {
-        controller = GetComponent<CharacterController>();
+        localScale = transform.localScale;
+        rb = GetComponent<Rigidbody2D>();
+        if (movingLeft == true)
+        {
+            dirX = -1f;
+        }
+
+        else
+        {
+            dirX = 1f;
+        }
+
+        cooldownTimePassed = Random.Range(0f, 2.5f);
     }
 
-    // Update is called once per frame
     void Update()
     {
-        switch (state)
-        {
-            case enemyStates.WalkingL:
-                WalkingL();
-                break;
-            case enemyStates.WalkingR:
-                WalkingR();
-                break;
-        }
+        timeFlown += Time.deltaTime;
+        timePassed += Time.deltaTime;
 
         Shoot();
+
+        if (timePassed >= respawnTime)
+        {
+            MoveIn();
+        }
+
+        TurnAround();
     }
 
-    void WalkingL()
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.tag == "Bullet")
+        {
+            MoveOut();
+            Debug.Log("beans");
+        }
+
+        if (collision.gameObject.tag == "KillAura")
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    void FixedUpdate()
+    {
+        rb.velocity = new Vector2(dirX * moveSpeed, rb.velocity.y);
+    }
+
+    private void LateUpdate()
+    {
+        CheckWhereToFace();
+    }
+
+    #region Functions
+
+    void CheckWhereToFace()
+    {
+        if (dirX > 0)
+            facingRight = true;
+        else if (dirX < 0)
+            facingRight = false;
+
+        if (((facingRight) && (localScale.x < 0)) || ((!facingRight) && (localScale.x > 0)))
+            localScale.x *= -1f;
+
+        transform.localScale = localScale;
+    }
+
+    void TurnAround()
     {
         timeFlown += Time.deltaTime;
 
-        controller.Move(Vector2.left * speed * Time.deltaTime);
-
         if (timeFlown >= flyingTime)
         {
-            state = enemyStates.WalkingR;
+            dirX *= -1f;
             timeFlown = 0f;
         }
-    }
-    void WalkingR()
-    {
-        timeFlown += Time.deltaTime;
 
-        controller.Move(Vector2.right * speed * Time.deltaTime);
-
-        if (timeFlown >= flyingTime)
-        {
-            state = enemyStates.WalkingL;
-            timeFlown = 0f;
-        }
     }
 
     void Shoot()
@@ -82,4 +129,20 @@ public class EnemyScript : MonoBehaviour
             cooldownTimePassed = 0;
         }
     }
+
+    void MoveOut()
+    {
+            transform.position = new Vector3 (transform.position.x, 16.3f, transform.position.z);
+            currentlyActive = false;
+            timePassed = 0f;
+        explode.Play();
+    }
+
+    void MoveIn()
+    {
+            transform.position = new Vector3(transform.position.x, originalHeight, transform.position.z);
+            currentlyActive = true;
+    }
+
+    #endregion
 }
